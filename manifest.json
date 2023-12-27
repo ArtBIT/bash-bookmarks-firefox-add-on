@@ -1,0 +1,26 @@
+{
+  "manifest_version": 2,
+  "name": "Bash-Bookmarks",
+  "description": "Bash-Bookmarks is a browser extension that allows you to use a plain-text bookmarks manager bash-bookmarks (github.com/artbit/bash-bookmarks)",
+  "version": "0.0.1",
+  "icons": {
+    "64": "icons/icon.png"
+  },
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "options_ui": {
+    "page": "options.html"
+  },
+  "omnibox": { "keyword": "bb" },
+  "permissions": ["bookmarks", "tabs", "storage"],
+  "browser_action": {
+    "default_title": "Bash Bookmarks",
+    "default_icon": "icons/icon.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "artbit@djordjeungar.com"
+    }
+  }
+}
