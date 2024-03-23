@@ -1,4 +1,4 @@
-Firefox Addon Page: https://addons.mozilla.org/en-US/firefox/addon/bash-bookmarks/
+Firefox Addon Page: https://addons.mozilla.org/firefox/addon/bash-bookmarks/
 
 This is a companion extension to https://github.com/artbit/bash-bookmarks
 
