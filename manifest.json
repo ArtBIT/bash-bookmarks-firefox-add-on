@@ -13,7 +13,7 @@
     "page": "options.html"
   },
   "omnibox": { "keyword": "bb" },
-  "permissions": ["bookmarks", "tabs", "storage"],
+  "permissions": ["bookmarks", "tabs", "storage", "notifications"],
   "browser_action": {
     "default_title": "Bash Bookmarks",
     "default_icon": "icons/icon.png"

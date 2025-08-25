@@ -64,6 +64,13 @@ browser.bookmarks.onCreated.addListener(
       .then((response) => {
         if (response.success) {
           console.log("Bookmark added!");
+          // show a small notification
+          browser.notifications.create({
+            type: "basic",
+            iconUrl: browser.runtime.getURL("icons/icon-48.png"),
+            title: "Bookmark Added",
+            message: `Title: ${title}\nURL: ${url}`,
+          });
         } else {
           console.log("Bookmark not added!");
         }
