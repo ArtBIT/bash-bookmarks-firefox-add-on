@@ -2,16 +2,42 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="pico.min.css">
+    <style>
+      /* Mobile-friendly styles */
+      @media (max-width: 768px) {
+        .container {
+          padding: 1rem;
+        }
+        input[type="text"] {
+          font-size: 16px; /* Prevents zoom on iOS */
+          padding: 12px;
+        }
+        button {
+          padding: 12px 24px;
+          font-size: 16px;
+          width: 100%;
+          margin-top: 1rem;
+        }
+        label {
+          font-size: 16px;
+          margin-bottom: 0.5rem;
+          display: block;
+        }
+      }
+    </style>
   </head>
 
   <body>
     <main class="container">
+      <h1>Bash-Bookmarks Settings</h1>
       <form>
-        <label for="serverURL">Bash-Bookmarks Server</label>
-        <input type="text" id="serverURL" name="serverURL" value="http://localhost:8000"/>
-        <button type="submit">Save</button>
+        <label for="serverURL">Bash-Bookmarks Server URL</label>
+        <input type="url" id="serverURL" name="serverURL" value="http://localhost:8000" placeholder="http://your-server:8000"/>
+        <button type="submit">Save Settings</button>
       </form>
+      <div id="status" style="margin-top: 1rem; padding: 0.5rem; border-radius: 4px; display: none;"></div>
     </main>
     <script src="options.js"></script>
   </body>

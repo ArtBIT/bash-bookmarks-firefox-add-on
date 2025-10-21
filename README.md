@@ -14,3 +14,47 @@ The extension will then query the bash-bookmarks server for results matching `so
 It will also register a listener to whenever you add a new bookmark, and also save it in your bash-bookmarks.
 
 See https://github.com/artbit/bash-bookmarks for more info.
+
+## Development
+
+This add-on now supports both Firefox desktop and Firefox for Android.
+
+### Building the Add-on
+
+Use the provided Makefile for development tasks:
+
+```bash
+# Show all available commands
+make help
+
+# Lint the add-on
+make lint
+
+# Show current version
+make version
+
+# Bump version and build
+make bump-patch  # 0.0.1 -> 0.0.2
+make bump-minor  # 0.0.1 -> 0.1.0
+make bump-major  # 0.0.1 -> 1.0.0
+
+# Build the add-on zip file
+make build
+
+# Run all: lint, bump patch version, and build
+make all
+
+# Clean build artifacts
+make clean
+```
+
+### Prerequisites
+
+Install web-ext if you haven't already:
+```bash
+make install
+```
+
+### Testing on Firefox Android
+
+See `test-android-compatibility.md` for detailed testing instructions.

@@ -31,9 +31,23 @@ function createSuggestionsFromResponse(response) {
   });
 }
 
-browser.browserAction.onClicked.addListener(() =>
-  browser.runtime.openOptionsPage()
-);
+browser.browserAction.onClicked.addListener(() => {
+  // Check if we're on Android and handle accordingly
+  if (browser.runtime.getPlatformInfo) {
+    browser.runtime.getPlatformInfo().then((platformInfo) => {
+      if (platformInfo.os === 'android') {
+        // On Android, open options in a new tab
+        browser.tabs.create({ url: browser.runtime.getURL('options.html') });
+      } else {
+        // On desktop, use the standard options page
+        browser.runtime.openOptionsPage();
+      }
+    });
+  } else {
+    // Fallback for older versions
+    browser.runtime.openOptionsPage();
+  }
+});
 
 browser.bookmarks.onCreated.addListener(
   async (id, { title, url, parentId }) => {
@@ -65,12 +79,17 @@ browser.bookmarks.onCreated.addListener(
         if (response.success) {
           console.log("Bookmark added!");
           // show a small notification
-          browser.notifications.create({
-            type: "basic",
-            iconUrl: browser.runtime.getURL("icons/icon-48.png"),
-            title: "Bookmark Added",
-            message: `Title: ${title}\nURL: ${url}`,
-          });
+          try {
+            browser.notifications.create({
+              type: "basic",
+              iconUrl: browser.runtime.getURL("icons/icon48.png"),
+              title: "Bookmark Added",
+              message: `Title: ${title}\nURL: ${url}`,
+            });
+          } catch (error) {
+            // Fallback for Android or if notifications are not supported
+            console.log("Notification not supported or failed:", error);
+          }
         } else {
           console.log("Bookmark not added!");
         }
