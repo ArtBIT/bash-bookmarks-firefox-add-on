@@ -18,6 +18,7 @@ help:
 	@echo "  bump-major  - Bump major version (0.0.1 -> 1.0.0)"
 	@echo "  build       - Build the add-on zip file"
 	@echo "  clean       - Clean build artifacts"
+	@echo "  publish     - Open Mozilla Add-ons page and build artifacts folder"
 	@echo "  all         - Lint, bump patch version, and build"
 	@echo "  install     - Install web-ext if not present"
 
@@ -112,3 +113,11 @@ info:
 	@echo "Version: $(shell grep '"version"' $(VERSION_FILE) | sed 's/.*"version": *"\([^"]*\)".*/\1/')"
 	@echo "Package name: $(PACKAGE_NAME)"
 	@echo "Build directory: $(BUILD_DIR)"
+
+# Open Mozilla Add-ons developer page and build artifacts folder
+.PHONY: publish
+publish:
+	@echo "Opening Mozilla Add-ons developer page and build artifacts..."
+	@xdg-open https://addons.mozilla.org/en-US/developers/addons
+	@xdg-open $(BUILD_DIR)
+	@echo "Publish targets opened!"

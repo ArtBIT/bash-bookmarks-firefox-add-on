@@ -41,6 +41,9 @@ make bump-major  # 0.0.1 -> 1.0.0
 # Build the add-on zip file
 make build
 
+# Open Mozilla Add-ons page and build artifacts folder
+make publish
+
 # Run all: lint, bump patch version, and build
 make all
 
