@@ -19,6 +19,9 @@ help:
 	@echo "  build       - Build the add-on zip file"
 	@echo "  clean       - Clean build artifacts"
 	@echo "  publish     - Open Mozilla Add-ons page and build artifacts folder"
+	@echo "  run-android - Run extension on Firefox for Android"
+	@echo "  android-devices - Show connected Android devices"
+	@echo "  android-logs - View extension logs on Android"
 	@echo "  all         - Lint, bump patch version, and build"
 	@echo "  install     - Install web-ext if not present"
 
@@ -121,3 +124,34 @@ publish:
 	@xdg-open https://addons.mozilla.org/en-US/developers/addons
 	@xdg-open $(BUILD_DIR)
 	@echo "Publish targets opened!"
+
+# Run extension on Firefox for Android
+.PHONY: run-android
+run-android: check-web-ext
+	@echo "Running extension on Firefox for Android..."
+	@if [ -z "$(DEVICE)" ]; then \
+		echo "Available devices:"; \
+		adb devices; \
+		echo ""; \
+		echo "Usage: make run-android DEVICE=device_id"; \
+		echo "Example: make run-android DEVICE=1A141FDF600180"; \
+		exit 1; \
+	fi
+	@echo "Using development manifest to avoid conflicts with installed extension..."
+	cp manifest.json manifest-prod.json
+	cp manifest-dev.json manifest.json
+	web-ext run -t firefox-android --android-device=$(DEVICE) --firefox-apk=org.mozilla.firefox
+	@echo "Restoring production manifest..."
+	mv manifest-prod.json manifest.json
+
+# Show connected Android devices
+.PHONY: android-devices
+android-devices:
+	@echo "Connected Android devices:"
+	adb devices
+
+# View extension logs on Android
+.PHONY: android-logs
+android-logs:
+	@echo "Viewing extension logs (press Ctrl+C to stop)..."
+	adb logcat | grep artbit@djordjeungar.com
