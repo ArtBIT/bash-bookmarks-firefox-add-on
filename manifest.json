@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Bash-Bookmarks",
   "description": "Bash-Bookmarks is a browser extension that allows you to use a plain-text bookmarks manager bash-bookmarks (github.com/artbit/bash-bookmarks)",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
