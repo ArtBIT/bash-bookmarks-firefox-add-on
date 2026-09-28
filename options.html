@@ -34,11 +34,13 @@
       <h1>Bash-Bookmarks Settings</h1>
       <form>
         <label for="serverURL">Bash-Bookmarks Server URL</label>
-        <input type="url" id="serverURL" name="serverURL" value="http://localhost:8000" placeholder="http://your-server:8000"/>
+        <input type="url" id="serverURL" name="serverURL" value="http://localhost:9080" placeholder="http://your-server:9080"/>
+        <small>For example http://192.168.1.10:9080 or https://bookmarks.example.com. Use the https:// address if the server redirects http:// to https://.</small>
         <button type="submit">Save Settings</button>
       </form>
       <div id="status" style="margin-top: 1rem; padding: 0.5rem; border-radius: 4px; display: none;"></div>
     </main>
+    <script src="api.js"></script>
     <script src="options.js"></script>
   </body>
 </html>
