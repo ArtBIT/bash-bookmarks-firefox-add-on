@@ -10,7 +10,7 @@
     "128": "icons/icon128.png"
   },
   "background": {
-    "scripts": ["background.js"]
+    "scripts": ["api.js", "background.js"]
   },
   "options_ui": {
     "page": "options.html",
@@ -20,6 +20,10 @@
     "tabs", 
     "storage",
     "notifications"
+  ],
+  "optional_permissions": [
+    "http://*/*",
+    "https://*/*"
   ],
   "browser_action": {
     "default_title": "Bash Bookmarks (Dev)",

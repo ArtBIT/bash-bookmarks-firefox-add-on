@@ -1,45 +1,47 @@
-// Put all the javascript code here, that you want to execute in background.
+// Background script: sends new Firefox bookmarks to the bookmarks server and
+// provides the "bb" omnibox search. The server API client lives in api.js.
 
 console.log("Bash-Bookmarks extension loaded");
-
-// Check available permissions
-browser.permissions.getAll().then(permissions => {
-  console.log("Available permissions:", permissions);
-}).catch(error => {
-  console.log("Error checking permissions:", error);
-});
 
 // Provide help text to the user (desktop only)
 if (browser.omnibox && browser.omnibox.setDefaultSuggestion) {
   browser.omnibox.setDefaultSuggestion({
-    description: `Search the bash-bookmarks 
+    description: `Search the bash-bookmarks
       (e.g. "sometitle" | "sometags")`,
   });
 }
 
-function createSuggestionsFromResponse(response) {
-  return new Promise((resolve) => {
-    let suggestions = [];
-    let suggestionsOnEmptyResults = [
-      {
-        content: "",
-        description: "no results found",
-      },
-    ];
-    response.json().then((results) => {
-      if (!results.length) {
-        return resolve(suggestionsOnEmptyResults);
-      }
+// Badge support differs between desktop and Android, so failures are ignored
+function setErrorBadge(hasError) {
+  try {
+    browser.browserAction.setBadgeText({ text: hasError ? "!" : "" });
+    if (hasError) {
+      browser.browserAction.setBadgeBackgroundColor({ color: "#d70022" });
+    }
+  } catch (error) {
+    console.log("Badge not supported:", error);
+  }
+}
 
-      results.forEach(({ title: description, url: content }) => {
-        suggestions.push({
-          content,
-          description,
-        });
-      });
-      return resolve(suggestions);
+function notify(title, message) {
+  try {
+    browser.notifications.create({
+      type: "basic",
+      iconUrl: browser.runtime.getURL("icons/icon48.png"),
+      title,
+      message,
+      priority: 1, // Higher priority for Android
     });
-  });
+  } catch (error) {
+    // Fallback for Android or if notifications are not supported
+    console.log("Notification not supported or failed:", error);
+  }
+}
+
+function reportError(title, error) {
+  console.log(`${title}:`, error);
+  setErrorBadge(true);
+  notify(title, error.message || String(error));
 }
 
 browser.browserAction.onClicked.addListener(() => {
@@ -60,138 +62,94 @@ browser.browserAction.onClicked.addListener(() => {
   }
 });
 
-// Function to process bookmark data with Android optimizations
-async function processBookmark(bookmarkInfo, eventType) {
-  console.log(`Bookmark ${eventType} event fired:`, bookmarkInfo);
-  
+async function processBookmark(bookmarkInfo) {
+  const { title, url } = bookmarkInfo;
+
+  // Folders and separators have no url
+  if (!url) {
+    return;
+  }
+  if (!/^https?:/i.test(url)) {
+    console.log("Skipping bookmark that is not a web page:", url);
+    return;
+  }
+
+  // Parent category detection removed - not supported on Android
+  const data = { url, title: title || "", category: "unsorted", tags: "" };
+
   try {
-    
-    // Extract bookmark data
-    const { title, url, parentId } = bookmarkInfo;
-    
-    // Validate required data
-    if (!title || !url) {
-      console.log("Invalid bookmark data:", { title, url });
-      return;
-    }
-    
-    console.log("Processing bookmark:", { title, url, parentId, eventType });
-    
-    // Get server URL from storage
-    let res = await browser.storage.sync.get("serverURL");
-    if (!res.serverURL) {
-      console.log("No server URL configured");
-      return;
-    }
-    
-    let requestUrl = `${res.serverURL}/add`;
-    console.log("Sending to server:", requestUrl);
-
-    let category = "unsorted";
-    // Parent category detection removed - not supported on Android
-    
-    let data = {
-      title,
-      url,
-      category,
-    };
-    
-    console.log("Sending data:", data);
-    
-    // Android-optimized request with timeout and retry
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-    
-    let headers = new Headers({
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    });
-    let body = JSON.stringify(data);
-    let request = new Request(requestUrl, { 
-      method: "POST", 
-      headers, 
-      body,
-      signal: controller.signal
-    });
-
-    fetch(request)
-      .then((response) => {
-        clearTimeout(timeoutId);
-        console.log("Server response status:", response.status);
-        return response.json();
-      })
-      .then((response) => {
-        console.log("Server response:", response);
-        if (response.success) {
-          console.log("Bookmark added successfully!");
-          // Show notification with Android-friendly settings
-          try {
-            browser.notifications.create({
-              type: "basic",
-              iconUrl: browser.runtime.getURL("icons/icon48.png"),
-              title: "Bookmark Added",
-              message: `Title: ${title}`,
-              priority: 1 // Higher priority for Android
-            });
-          } catch (error) {
-            // Fallback for Android or if notifications are not supported
-            console.log("Notification not supported or failed:", error);
-          }
-        } else {
-          console.log("Bookmark not added - server returned success: false");
-        }
-      })
-      .catch((error) => {
-        clearTimeout(timeoutId);
-        console.log("Error sending bookmark to server:", error);
-        
-        // Retry once after a delay for Android
-        if (error.name === 'AbortError') {
-          console.log("Request timed out, retrying in 2 seconds...");
-          setTimeout(() => {
-            processBookmark(bookmarkInfo, eventType + "_retry");
-          }, 2000);
-        }
-      });
+    const serverURL = await getServerURL();
+    console.log("Sending bookmark to", serverURL, data);
+    const result = await addBookmark(serverURL, data);
+    console.log("Server response:", result);
+    setErrorBadge(false);
+    notify("Bookmark Added", `Title: ${result.title || title}`);
   } catch (error) {
-    console.log("Error in bookmark listener:", error);
+    reportError("Bookmark not saved to Bash-Bookmarks", error);
   }
 }
 
 // Check if bookmarks API is available
 if (browser.bookmarks) {
-  console.log("Bookmarks API is available - setting up listeners");
-  
-  // Listen for bookmark creation
-  browser.bookmarks.onCreated.addListener(
-    async (id, bookmarkInfo) => {
-      console.log("Bookmark created:", bookmarkInfo);
-      await processBookmark(bookmarkInfo, "created");
-    }
-  );
-  
-  console.log("Bookmark listener registered successfully");
+  browser.bookmarks.onCreated.addListener((id, bookmarkInfo) => {
+    console.log("Bookmark created:", bookmarkInfo);
+    return processBookmark(bookmarkInfo);
+  });
 } else {
   console.log("Bookmarks API is not available - extension will not process bookmarks");
 }
 
+function isWebURL(text) {
+  try {
+    return ["http:", "https:"].includes(new URL(text).protocol);
+  } catch (error) {
+    return false;
+  }
+}
 
 // Omnibox functionality (desktop only)
 if (browser.omnibox) {
   browser.omnibox.onInputChanged.addListener(async (text, addSuggestions) => {
-    let headers = new Headers({ Accept: "application/json" });
-    let init = { method: "GET", headers };
-    let format = "json";
-    let res = await browser.storage.sync.get("serverURL");
-    let requestUrl = `${res.serverURL}/search?format=${format}&q=${text}`;
-    let request = new Request(requestUrl, init);
+    const query = text.trim();
+    if (query.length < MIN_QUERY_LENGTH) {
+      addSuggestions([{ content: query, description: `Type at least ${MIN_QUERY_LENGTH} characters to search` }]);
+      return;
+    }
 
-    fetch(request).then(createSuggestionsFromResponse).then(addSuggestions);
+    let serverURL = DEFAULT_SERVER_URL;
+    try {
+      serverURL = await getServerURL();
+      const results = await searchBookmarks(serverURL, query);
+      setErrorBadge(false);
+      if (!results.length) {
+        addSuggestions([{ content: query, description: "no results found" }]);
+        return;
+      }
+      addSuggestions(results.map(({ title, url }) => ({
+        content: url,
+        description: title || url,
+      })));
+    } catch (error) {
+      console.log("Search failed:", error);
+      setErrorBadge(true);
+      addSuggestions([{
+        content: `${serverURL}/`,
+        description: `Bash-Bookmarks error: ${error.message}`,
+      }]);
+    }
   });
 
   // Open the page based on how the user clicks on a suggestion.
-  browser.omnibox.onInputEntered.addListener((text, disposition) => {
+  browser.omnibox.onInputEntered.addListener(async (text, disposition) => {
     let url = text;
+    if (!isWebURL(text)) {
+      // Plain query entered without picking a suggestion: show the server's search results page
+      const serverURL = await getServerURL();
+      const searchURL = new URL(`${serverURL}/search`);
+      searchURL.searchParams.set("q", text.trim());
+      searchURL.searchParams.set("format", "html");
+      url = searchURL.href;
+    }
     switch (disposition) {
       case "currentTab":
         browser.tabs.update({ url });
@@ -205,6 +163,3 @@ if (browser.omnibox) {
     }
   });
 }
-
-// Confirm listeners are registered
-console.log("All listeners registered successfully");
